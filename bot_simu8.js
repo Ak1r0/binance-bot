@@ -15,8 +15,14 @@ let countBuyCompleted = 0;
 let countSellStarted = 0;
 let countSellCompleted = 0;
 
+let BTCBalanceStart = 0;
+let USDTBalanceStart = 0;
+
+// const INDEX_XRP = 67;
+const INDEX_USDT = 14;
+// const INDEX_BTC = 0;
+const PRICE_UPDATE_PERIOD = 5000; // Price update times varies a lot
 const ORDER_UPDATE_PERIOD = 3000;
-const TRADE_QTY = 15;
 
 // VARIABLES - Stochastic Relative Strenght Index indicator
 let inputStochRSI = {
@@ -67,6 +73,7 @@ const makeBuyOrder = async (buyQuantity, currentPrice) => {
         quantity: buyQuantity,
         price: currentPrice,
     });
+    console.log('buyOrderInfo: ', buyOrderInfo, '\n');
     return buyOrderInfo.orderId;
 }
 
@@ -82,7 +89,6 @@ const waitBuyOrderCompletion = async (orderId) => {
         if (buyOrderInfo.status === 'FILLED') {
             countBuyCompleted++;
             console.log('PURCHASE COMPLETE! \n');
-            console.log('buyOrderInfo: ', buyOrderInfo, '\n');
             return 'success';
         }
         await wait(ORDER_UPDATE_PERIOD);
@@ -109,6 +115,7 @@ const makeSellOrder = async (qty, currentPrice) => {
         quantity: qty,
         price: currentPrice,
     });
+    console.log('sellOrderInfo: ', sellOrderInfo, '\n');
     return sellOrderInfo.orderId;
 }
 
@@ -125,90 +132,47 @@ const waitSellOrderCompletion = async (orderId) => {
         if (sellOrderInfo.status === 'FILLED') {
             countSellCompleted++;
             console.log('SALE COMPLETE! \n');
-            console.log('sellOrderInfo: ', sellOrderInfo, '\n');
             return 'success';
         }
         await wait(ORDER_UPDATE_PERIOD);
     }
+
+    // console.log('SALE TIMED OUT, CANCELLING \n');
+    // await client.cancelOrder({
+    //     symbol: 'BTCUSDT',
+    //     orderId: sellOrderInfo.orderId,
+    // });
+    // return 'failure';
 }
 
 // Selling mechanism, invokes the 3 functions above as needed
 const sell = async (qty, sellingPrice) => {
     console.log('SELLING at ', sellingPrice);
-    let orderId = await makeSellOrder(qty, sellingPrice);
-    waitSellOrderCompletion(orderId);
-}
-
-const initializeInputStochRSI = async (candles) => {
-    // console.log('INITIALIZING STOCH RSI');
-    for(let i = 0, currentClosePrice = null; i <= STOCHRSI_CALCULATION_PERIOD + 3; i++){
-        currentClosePrice = candles[(candles.length - 1) - (STOCHRSI_CALCULATION_PERIOD + 3) + i ].close;
-        inputStochRSI.values[ i ] = Number(currentClosePrice);
+    let sellSuccess;
+    while (true) {
+        //let {profit, currentPrice} = await calculateProfit();
+        // if (profit >= 0.175) {
+            let orderId = await makeSellOrder(qty, sellingPrice);
+            waitSellOrderCompletion(orderId);
+            // if (sellSuccess === 'failure') continue;
+            return;
+        // }
+        // if(profit < -0.2){
+        // TODO: Implement stop logic
+        // }
+        await wait(PRICE_UPDATE_PERIOD);
     }
-    // console.log('inputStochasticRSI: ', inputStochRSI);
-    // console.log('inputStochasticRSI.value.lenght: ', inputStochRSI.values.length, '\n');
-}
-
-
-// Updates the input for the stochastic RSi calculation. It adds the newedt price and removes the oldest one.
-const updateInputStochRSI = async (candles) => {
-    // console.log('UPDATING STOCH RSI');
-    inputStochRSI.values.shift();
-    let lastClosePrice = candles[candles.length - 1 ].close;
-    inputStochRSI.values.push(Number(lastClosePrice));
-    // console.log('lastClosePrice: ', lastClosePrice);
-    // console.log('inputStochRSI: ', inputStochRSI, '\n');
-}
-
-// Calculates stochastic RSI based on the prices input
-const calculateStochRSI = async () => {
-    //console.log('CALCULATING STOCH RSI');
-    let calculatedStochRSI = StochasticRSI.calculate(inputStochRSI);
-   // console.log('calculatedStochRSI: ', calculatedStochRSI, '\n');
-    return calculatedStochRSI;
-}
-
-// Initializes the Ehlers filter (super smoother)
-const initializeSmoother = async (SRSI) => {
-    console.log('INITIALIZING SUPER SMOOTHER');
-    filter[0] = c1 * (SRSI[1].stochRSI + SRSI[0].stochRSI);
-    filter[1] = c1 * (SRSI[2].stochRSI + SRSI[1].stochRSI) + c2 * filter[0];
-    filter[2] = c1 * (SRSI[3].stochRSI + SRSI[2].stochRSI) + c2 * filter[1] + c3 * filter[0];
-    //console.log('smoothedStochRSI: ', filter[2], '\n');
-}
-
-// Calculates next value for the Ehlers filter
-const calculateSmoother = async (SRSI) => {
-    console.log('CALCULATING SUPER SMOOTHER');
-    let newValue = c1 * (SRSI[3].stochRSI + SRSI[2].stochRSI) + c2 * filter[2] + c3 * filter[1];
-    filter.push(newValue);
-    filter.shift();
-    //console.log('smoothedStochRSI: ', filter, '\n');
 }
 
 // Main function, entrance point for the program
 (async function main() {
-    let calculatedStochRSI = null, smoothedStochRSI = null
+    let buySuccess = null;
     let candles = null;
 
     let accountInfo = await client.accountInfo();
     console.log(accountInfo);
-    let BTCBalanceStart = parseFloat(accountInfo.balances[1].free) + parseFloat(accountInfo.balances[1].locked);
-    let USDTBalanceStart = parseFloat(accountInfo.balances[6].free) + parseFloat(accountInfo.balances[6].locked);
-
-    try {
-        candles = await client.candles({
-            symbol: 'BTCUSDT',
-            interval: '1m'
-        });
-        await initializeInputStochRSI(candles);
-        calculatedStochRSI = await calculateStochRSI();
-        smoothedStochRSI = await initializeSmoother(calculatedStochRSI);
-        await sync();
-    } catch (e) {
-        console.error('ERROR DURING INITIALIZATION: ', e);
-        process.exit(-1);
-    }
+    let BTCBalanceStart = accountInfo.balances[1].free;
+    let USDTBalanceStart = accountInfo.balances[6].free;
 
     while (true) {
         try {
@@ -216,32 +180,14 @@ const calculateSmoother = async (SRSI) => {
                 symbol: 'BTCUSDT',
                 interval: '1m'
             });
-        } catch (e) {
-            console.error('ERROR IN updating candles(): ', e);
-            process.exit(-1);
-        }
 
-        try {
-            await updateInputStochRSI(candles);
         } catch (e) {
-            console.error('ERROR IN updateStochRSI(): ', e);
-            process.exit(-1);
-        }
-        try {
-            calculatedStochRSI = await calculateStochRSI();
-        } catch (e) {
-            console.error('ERROR IN calculateStochRSI(): ', e);
-            process.exit(-1);
-        }
-        try {
-            smoothedStochRSI = await calculateSmoother(calculatedStochRSI);
-            console.log('SmoothedStockRSI:', smoothedStochRSI);
-        } catch (e) {
-            console.error('ERROR IN calculateSmoother(): ', e);
+            console.error('ERROR IN getting candles : ', e);
             process.exit(-1);
         }
 
         let lastCandle = candles[candles.length - 1];
+        let prevClosePrice = parseFloat(candles[candles.length - 2].close);
         let closePrice = parseFloat(lastCandle.close);
         let deltaSum = 0;
         let lastDelta;
@@ -272,70 +218,62 @@ const calculateSmoother = async (SRSI) => {
         let low = deltas[0];
         let moy = deltaSum / deltas.length;
 
-        // console.log('deltas = low:', low, 'high:', high, 'median:', median, 'moy:', moy, 'lastDelta:', lastDelta, 'nbCandles:'+candles.length);
+        console.log('deltas = low:', low, 'high:', high, 'median:', median, 'moy:', moy, 'lastDelta:', lastDelta, 'nbCandles:'+candles.length);
         console.log('candles = open:', lastCandle.open, 'close:',closePrice, 'low:', lastCandle.low, 'high:', lastCandle.high);
 
-        let direction = 'UP';
+        let buyPrice = Math.min(lastCandle.low + median, lastCandle.close);
+        let buyQuantity = 15 / buyPrice;
+        let fees = buyQuantity * buyPrice * 0.001 // binance fees
 
-        if( lastCandle.open > lastCandle.close ){
-            direction = 'DOWN';
-        }
+        let networkfees = 0.00000001 * 5 * 632 // satoshis to bitcoin * fee * transaction weight
+        let marge = 0.1;
+        let shouldSellAt = buyPrice + fees + networkfees + marge;
 
-        let platformFees = TRADE_QTY * 0.001 // binance fees
-        let networkFees = 0.00000001 * 5 * 632 // satoshis to bitcoin * fee * transaction weight
-        let marge = median;
-        let priceChange = (platformFees + networkFees)*2 + marge; // * 2 for fees on buy and fees on sell
+        console.log('buyPrice: ', buyPrice, 'fees:', fees, 'networkfees:', networkfees, 'marge:',marge, 'buyQty:',buyQuantity);
+        console.log('shouldSellAt:', shouldSellAt);
+        console.log('buyPrice < flooredShouldSellAt', buyPrice < shouldSellAt);
+        console.log('shouldSellAt < lastCandle.high - median', shouldSellAt <= (lastCandle.high- median));
 
-        let buyPrice = lastCandle.close - (priceChange/2); // (lastCandle.low + lastCandle.close)/2 ;
-        let buyQuantity = TRADE_QTY / buyPrice;
+        // 1 :
+        // buy = low + close / 2 => moyenne entre low et close
+        // sell IF shouldSellAt <= (close + high)/2
 
-        let sellPrice = lastCandle.close + (priceChange/2);
+        // 2:
+        // IF open < close : buy (current) -> sell high
+        // IF open > close : sell (current) -> buy low
+
 
         buyQuantity = buyQuantity.toFixed(6);
         buyPrice = buyPrice.toFixed(2);
-        sellPrice = sellPrice.toFixed(2);
+        shouldSellAt = shouldSellAt.toFixed(2);
 
+        console.log('final= qty:',buyQuantity ,'buyprice: ',buyPrice, 'sellprice:', shouldSellAt);
 
-        // 2:
-        // IF open < close : buy (current) -> sell high (ex sell a (current + high)/2)
-        // IF open > close : sell (current) -> buy low (ex buy a (current + low)/2)
+        if (//lastCandle.low < (closePrice - median) &&
+            //!isNaN(lastDelta) && lastDelta < Math.min((median*2), high) &&
+            buyPrice < shouldSellAt &&
+            shouldSellAt <= lastCandle.high - median) {
 
-        // 3 : Prendre le prix current et enlever 50% des frais+marge = prix achat, ajouter le meme montant = prix de vente
-
-        console.log('deltas = low:', low, 'high:', high, 'median:', median, 'moy:', moy, 'lastDelta:', lastDelta, 'nbCandles:'+candles.length);
-        console.log('buyPrice: ', buyPrice, 'fees:', platformFees, 'networkfees:', networkFees, 'marge:',marge, 'buyQty:',buyQuantity);
-        console.log('sellPrice:', sellPrice);
-        console.log('buyPrice < sellPrice', buyPrice < sellPrice);
-        //console.log('shouldSellAt < lastCandle.high - median', shouldSellAt <= (lastCandle.high- median));
-        console.log('sellPrice >= (buyPrice + priceChange)', sellPrice >= (buyPrice + priceChange));
-        console.log('buyPrice >= ((lastCandle.low + lastCandle.low +lastCandle.close)/3)', buyPrice >= ((lastCandle.low + lastCandle.low + lastCandle.close)/3));
-        console.log('sellPrice <= ((lastCandle.high + lastCandle.high +lastCandle.close)/3)', sellPrice <= ((lastCandle.high + lastCandle.high +lastCandle.close)/3));
-
-        if (buyPrice < sellPrice &&
-            sellPrice >= (buyPrice + priceChange) &&
-            buyPrice >= ((lastCandle.low + lastCandle.low + lastCandle.close)/3) &&
-            sellPrice <= ((lastCandle.high + lastCandle.high + lastCandle.close)/3)
-        ) {
             try {
-                buy(buyQuantity, buyPrice); // delete away
+                buySuccess = await buy(buyQuantity, buyPrice);
             } catch (e) {
                 console.error('ERROR IN buy(): ', e);
-                console.error('RESUMING...');
+                console.log('RESUMING OPERATIONS\n');
                 continue;
             }
+            if (buySuccess === 'failure') continue;
             try {
-                await sell(buyQuantity, sellPrice);
+                await sell(buyQuantity, shouldSellAt);
             } catch (e) {
                 console.error('ERROR IN sell(): ', e);
                 process.exit(-1);
             }
         }
-
         console.log('countBuyStarted:', countBuyStarted, 'countBuyCompleted:', countBuyCompleted);
         console.log('countSellStarted:', countSellStarted, 'countSellCompleted:', countSellCompleted);
         accountInfo = await client.accountInfo();
-        let BTCBalance = parseFloat(accountInfo.balances[1].free) + parseFloat(accountInfo.balances[1].locked);
-        let USDTBalance = parseFloat(accountInfo.balances[6].free) + parseFloat(accountInfo.balances[6].locked);
+        let BTCBalance = parseFloat(accountInfo.balances[1].free);
+        let USDTBalance = parseFloat(accountInfo.balances[6].free);
 
         console.log('Balances= BTC:',BTCBalance, ' USDT:',USDTBalance);
         console.log('Profit= BTC:',(BTCBalance-BTCBalanceStart), ' USDT:',(USDTBalance - USDTBalanceStart));

@@ -1,0 +1,443 @@
+SIMULATION 1 sur 1H :
+------
+Prix d'achat = lastCandle.low + median;
+SellPrice = buyPrice + fees + networkfees;
+BUY IF : buyPrice < flooredShouldSellAt
+            && flooredShouldSellAt < lastCandle.high
+------
+	BITCOINS
+Qty after trade - Qty Origin
+1,10682 - 1,10682 = 0,0 BTC
+
+* 41946,27 (prix 1 BTC) = 0 USDT
+GAIN DE 0$
+------
+	USDT
+Qty after trade - Qty Origin
+5453,75283538 - 5453,33991100 = 0,41292438 USDT
+GAIN DE 0,40€
+------
+	Marge sur 1H
+0 + 0,40 = + 0,40 USDT
+132 trade = 66 buy & 66 sell
+Last trade ID 8106611
+------
+	Projection :
+0,40 * 24 * 30 = 288 $ / mois
+------
+Observation : Environ 6 trades en attente qui ne s'executent pas assez vite ; ils ont fini par etre completes 30mn apres
+Surtout les SELL
+RSI Montant, Courbe stable
+
+=====================================================
+
+SIMULATION 2 startAt 15h16 à 16h25
+Prix d'achat = lastCandle.low;
+SellPrice = buyPrice + fees + networkfees + (median/2);
+BUY IF : buyPrice < flooredShouldSellAt
+            && flooredShouldSellAt < lastCandle.high
+------
+	BITCOINS
+Qty after trade - Qty Origin
+1,09799200 - 1,10682000 = -0,008828 BTC
+
+* 41946,27 (prix 1 BTC) = -370,30167156 USDT
+PERTE DE 370,30167156$
+------
+	USDT
+Qty after trade - Qty Origin
+5829,84230052 - 5453,75283538 = 376,08946514USDT
+GAIN DE 376,08946514€
+------
+	Marge sur 1H
+376,08946514 - 370,30167156 = + 5,78779358 USDT
+339 - 132 = 207 trades
+Last trade ID
+------
+	Projection :
+5,78 * 21,81 (prorata pour durée de test d'1h10) * 30 = 3781,854 $ / mois
+------
+Observation : Environ 6 trades en attente qui ne s'executent pas assez vite ; ils ont fini par etre completes 30mn apres
+QUE des BUY (22 open order que j'ai du cancel)
+RSI Montant tres fort
+Courbe montante tres fort
+
+=====================================================
+
+SIMULATION 3 : 17h24 => 18h53
+
+Prix d'achat = lastCandle.low + median + median / 2;
+SellPrice = buyPrice + fees + networkfees;
+BUY IF : !isNaN(lastDelta) && lastDelta < Math.min((median*2), high) &&
+            buyPrice < flooredShouldSellAt &&
+            flooredShouldSellAt <= lastCandle.high - median
+------
+	BITCOINS
+Qty after trade - Qty Origin
+1,09799200 - 1,10682000 = -0,008828 BTC
+
+* 41946,27 (prix 1 BTC) = -370,30167156 USDT
+PERTE DE 370,30167156$
+------
+	USDT
+Qty after trade - Qty Origin
+5829,84230052 - 5453,75283538 = 376,08946514USDT
+GAIN DE 376,08946514€
+------
+	Marge sur 1H
+376,08946514 - 370,30167156 = + 5,78779358 USDT
+339 - 132 = 207 trades
+Last trade ID
+------
+Observation: aucun trade
+
+=====================================================
+
+SIMULATION 4 : 19h39 => 21h30
+------
+	BITCOINS
+Qty after trade - Qty Origin
+1,09658800 - 1,09658800 =  BTC
+
+* 41946,27 (prix 1 BTC) =  USDT
+
+PERTE DE
+------
+	USDT
+Qty after trade - Qty Origin
+5890,28917343 - 5890,26481343 = 0,02436 USDT
+
+GAIN DE 376,08946514€
+------
+Observation: echec bcp de trades en erreur
+
+=====================================================
+SIMULATION 5 : 23h28 => 00h27
+Prix d'achat = lastCandle.low + median;
+let marge = median / 2;
+let shouldSellAt = buyPrice + fees + networkfees + marge;
+BUY IF : buyPrice < shouldSellAt &&
+            shouldSellAt <= lastCandle.high - median
+------
+	BITCOINS
+Qty after trade - Qty Origin
+1,09658800 - 1,09658800 = 0 BTC
+
+* 41946,27 (prix 1 BTC) =  USDT
+
+PERTE DE
+------
+	USDT
+Qty after trade - Qty Origin
+5890,41893004 - 5890,26481343 = 0,14316336 USDT
+
+GAIN DE 0,15 €
+------
+	Projection :
+0,15 * 24 * 30 = 108 $ / mois
+------
+Observation: courbe descendante RSI dans les bornes
+Aucun pb d'achat/vente
+
+=====================================================
+
+SIMULATION 6 : 00h47 => 1h42
+let buyPrice = Math.min(lastCandle.low + median, lastCandle.close - median);
+let marge = median / 2;
+let shouldSellAt =Math.max((buyPrice + fees + networkfees + marge), lastCandle.high-median);
+BUY IF : buyPrice < shouldSellAt &&
+            shouldSellAt <= lastCandle.high - median
+------
+	BITCOINS
+Qty after trade - Qty Origin
+1,08409300 - 1,09658800 = -0,012495 BTC
+
+* 42050 (prix 1 BTC) = -525,41475 USDT
+
+PERTE DE
+------
+	USDT
+Qty after trade - Qty Origin
+6417,03918693 - 5890,41893004 = 526,62025689 USDT
+
+GAIN DE  €
+
+------
+	Projection :
+1,20* 24 * 30 =  867,9649608 $ / mois
+
+------
+Observation: n'achete pas
+Le pb dans ces cas là c'est qu'on ne fait que vendre du BTC et profiter de l'inflation des prix
+j'ai pas l'impression que ca marcherai avec un petit portefeuille
+et il faudra bien les racheter ces BTC a un moment ou un autre
+
+=====================================================
+
+SIMULATION 7 : 01h50 =>
+
+let buyPrice = Math.MAX(lastCandle.low + median, lastCandle.close - median);
+let marge = median / 2;
+let shouldSellAt =Math.max((buyPrice + fees + networkfees + marge), lastCandle.high-median);
+BUY IF : buyPrice < shouldSellAt &&
+            shouldSellAt <= lastCandle.high - median
+------
+	BITCOINS
+Qty after trade - Qty Origin
+1,09134900 - 1,08409300 = 0,007256 BTC
+
+* 39058,69 (prix 1 BTC) = 283,40985464 USDT
+
+PERTE DE
+------
+	USDT
+Qty after trade - Qty Origin
+6124,36904646 - 6417,03918693 = -292,67014047 USDT
+
+PERTE DE -9,26028583 €
+------
+	Projection :
+1,20* 24 * 30 =  $ / mois
+
+------
+Observation:
+Balances= BTC: 1.084093  USDT: 6210.45253431
+Profit= BTC: 0  USDT: -206.58665261999977
+trop d'invendus
+
+=====================================================
+
+SIMULATION 8 :  11h08 => 12h08
+
+let buyPrice = Math.min(lastCandle.low + median, lastCandle.close);
+let marge = 0.1;
+let shouldSellAt = buyPrice + fees + networkfees + marge;
+BUY IF : buyPrice < shouldSellAt &&
+            shouldSellAt <= lastCandle.high - median
+------
+	BITCOINS
+Qty after trade - Qty Origin
+1,09134900 - 1,09134900 = 0 BTC
+
+* 39058,69 (prix 1 BTC) =  USDT
+
+PERTE DE
+------
+	USDT
+Qty after trade - Qty Origin
+6124,60037442 - 6124,36904646 = 0,23132796 USDT
+
+GAIN DE 0.23 $
+------
+	Projection :
+0.23 * 24 * 30 = 165.5 $ / mois
+
+------
+Observation:
+Tout ok
+=====================================================
+
+SIMULATION 9 :  12h21 => 13h26
+
+let buyPrice = (lastCandle.low + lastCandle.close)/2;
+let marge = 0.1;
+let shouldSellAt = buyPrice + fees + networkfees + marge;
+BUY IF :
+            buyPrice < shouldSellAt &&
+            shouldSellAt <= ((lastCandle.high + lastCandle.close)/2)
+------
+	BITCOINS
+Qty after trade - Qty Origin
+1,09134900 - 1,09134900 = 0 BTC
+
+* 39058,69 (prix 1 BTC) =  USDT
+
+PERTE DE
+------
+	USDT
+Qty after trade - Qty Origin
+6125,10040280 - 6124,60037442 = 0,50002838 USDT
+
+GAIN DE ,50 $
+------
+	Projection :
+,50 * 24 * 30 = 360 $ / mois
+
+------
+Observation:
+Difficultés de BUY
+A fini par tout BUY
+
+===> re tester en BUY = (lastCandle.low + lastCandle.close + lastCandle.close)/3; ====> pour etre plus proche de close que de low
+
+=====================================================
+
+SIMULATION 10 :  14h15 => 15h17
+
+let buyPrice = (direction === 'UP') ? lastCandle.close : (lastCandle.low + lastCandle.close)/2 ;
+let marge = 0.1;
+let shouldSellAt = buyPrice + fees + networkfees + marge;
+
+    if(direction === 'UP') {
+		if (buyPrice < shouldSellAt &&
+			shouldSellAt <= ((lastCandle.high + lastCandle.close)/2)
+
+	else {
+		if (buyPrice < shouldSellAt &&
+					shouldSellAt <= ((lastCandle.high + lastCandle.close)/2) &&
+					buyPrice < lastCandle.high
+------
+	BITCOINS
+Qty after trade - Qty Origin
+1,09134900 - 1,09134900 = 0 BTC
+
+* 39058,69 (prix 1 BTC) =  USDT
+
+PERTE DE
+------
+	USDT
+Qty after trade - Qty Origin
+6125,48717955 - 6125,10040280 = 0,38677675 USDT
+
+GAIN DE 0,38 $
+------
+	Projection :
+0,38 * 24 * 30 = 273,6 $ / mois
+
+------
+Observation:
+Tout s'est acheté et vendu correctement
+
+=====================================================
+
+SIMULATION 11 :  15h25
+
+ let platformFees = TRADE_QTY * 0.001 // binance fees
+        let networkFees = 0.00000001 * 5 * 632 // satoshis to bitcoin * fee * transaction weight
+        let marge = 0.1;
+        let priceChange = platformFees + networkFees + marge;
+
+        let buyPrice = lastCandle.close - (priceChange/2); // (lastCandle.low + lastCandle.close)/2 ;
+        let buyQuantity = TRADE_QTY / buyPrice;
+
+        let sellPrice = lastCandle.close + (priceChange/2);
+
+
+    buyPrice < sellPrice &&
+            sellPrice >= (buyPrice + priceChange) &&
+            buyPrice >= ((lastCandle.low + lastCandle.close)/2) &&
+            sellPrice <= ((lastCandle.high + lastCandle.close)/2)
+
+	Plus de "await" devant "buy()"
+------
+	BITCOINS
+Qty after trade - Qty Origin
+1,09095600 - 1,09134900 = -0,000393 BTC
+
+* 38621.12 (prix 1 BTC) = -15,17810016 USDT
+
+PERTE DE
+------
+	USDT
+Qty after trade - Qty Origin
+6140,68887519 - 6125,48717955 = 15,20169564 USDT
+
+GAIN DE 0.02 $
+------
+	Projection :
+ * 24 * 30 = 16 $ / mois
+
+------
+Observation:
+
+Simple a comprendre, marche pas trop mail mais aucun gain
+
+=====================================================
+
+SIMULATION 12 :  16h48
+
+ let platformFees = TRADE_QTY * 0.001 // binance fees
+        let networkFees = 0.00000001 * 5 * 632 // satoshis to bitcoin * fee * transaction weight
+        let marge = 10;
+        let priceChange = platformFees + networkFees + marge;
+
+        let buyPrice = lastCandle.close - (priceChange/2); // (lastCandle.low + lastCandle.close)/2 ;
+        let buyQuantity = TRADE_QTY / buyPrice;
+
+        let sellPrice = lastCandle.close + (priceChange/2);
+
+
+    buyPrice < sellPrice &&
+            sellPrice >= (buyPrice + priceChange) &&
+            buyPrice >= ((lastCandle.low + lastCandle.close)/2) &&
+            sellPrice <= ((lastCandle.high + lastCandle.close)/2)
+
+	Plus de "await" devant "buy()"
+------
+	BITCOINS
+Qty after trade - Qty Origin
+1,09134000 - 1,09095600 = 0,000384 BTC
+
+* 38582 (prix 1 BTC) = 14,815488 USDT
+
+PERTE DE
+------
+	USDT
+Qty after trade - Qty Origin
+6125,87699612 - 6140,68887519 = -14,81187907 USDT
+
+GAIN DE 0 $
+------
+	Projection :
+ * 24 * 30 =  $ / mois
+
+------
+Observation:
+1 SELL pas passé
+
+=====================================================
+
+SIMULATION 13 :  18h02 => 19h00 (relancée à 19h04)
+
+ let platformFees = TRADE_QTY * 0.001 // binance fees
+        let networkFees = 0.00000001 * 5 * 632 // satoshis to bitcoin * fee * transaction weight
+        let marge = median;
+        let priceChange = platformFees + networkFees + marge;
+
+        let buyPrice = lastCandle.close - (priceChange/2); // (lastCandle.low + lastCandle.close)/2 ;
+        let buyQuantity = TRADE_QTY / buyPrice;
+
+        let sellPrice = lastCandle.close + (priceChange/2);
+
+
+    buyPrice < sellPrice &&
+            sellPrice >= (buyPrice + priceChange) &&
+            buyPrice >= ((lastCandle.low + lastCandle.low + lastCandle.close)/3) &&
+            sellPrice <= ((lastCandle.high + lastCandle.high + lastCandle.close)/3)
+
+	Plus de "await" devant "buy()"
+------
+	BITCOINS
+Qty after trade - Qty Origin
+  1.09134 - 1,09134000 = 0 BTC
+
+* 38582 (prix 1 BTC) =  USDT
+
+PERTE DE
+------
+	USDT
+Qty after trade - Qty Origin
+6129.89045545 - 6125,87699612 = 4.013459330000842 USDT
+
+GAIN DE 0 $
+------
+	Projection :
+ * 24 * 30 =  $ / mois
+
+------
+Observation:
+48 trades
+Methode de calcul claire
+
+=====================================================
+
